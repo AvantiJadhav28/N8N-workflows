@@ -1,0 +1,188 @@
+{
+  "updatedAt": "2026-06-15T09:44:38.043Z",
+  "createdAt": "2026-06-12T11:58:10.704Z",
+  "id": "0KKkKlZ2akiGtEzF",
+  "name": "API Snapshot Testing",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        240
+      ],
+      "id": "d1d53de5-fc17-47dd-b700-7964b1482f5e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -480,
+        240
+      ],
+      "id": "32cb22ac-2b36-4f91-987b-44e53bd34b8e",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c7072679-1be5-4b5d-9d86-1017648b336f",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "MATCH",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        240
+      ],
+      "id": "09d2a367-4821-4188-a85c-512794743933",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { readFileSync, writeFileSync, existsSync } = require('fs');\nconst snapshotPath = 'C:\\\\myapp\\\\api-snapshot.json';\n\nconst raw = $input.first().json;\nconst bodyOnly = raw.body || raw;\nconst current = JSON.stringify(bodyOnly, null, 2);\n\nif (!existsSync(snapshotPath)) {\n  writeFileSync(snapshotPath, current);\n  return [{ json: { status: 'CREATED', message: 'First snapshot saved.', snapshot: current } }];\n}\n\nconst previous = readFileSync(snapshotPath, 'utf8');\nif (current === previous) {\n  return [{ json: { status: 'MATCH', message: 'API response unchanged.', snapshot: current } }];\n} else {\n  return [{ json: { status: 'DIFF', message: 'API response has changed!', previous, current } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        240
+      ],
+      "id": "434f30b8-bb6c-40dd-8ba4-efae152e9dfa",
+      "name": "1ST CODE NODE1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { appendFileSync } = require('fs');\nappendFileSync('C:\\\\myapp\\\\snapshot-log.txt', `MATCH | ${new Date().toISOString()} | API unchanged\\n`);\nreturn [{ json: { status: 'MATCH' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        144
+      ],
+      "id": "0dbd597d-fb6b-458b-ab16-596715dfe3f9",
+      "name": "2ND CODE NODE1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { appendFileSync, writeFileSync } = require('fs');\nconst d = $input.first().json;\nappendFileSync('C:\\\\myapp\\\\snapshot-log.txt', `DIFF | ${new Date().toISOString()} | API changed!\\n`);\nwriteFileSync('C:\\\\myapp\\\\api-snapshot.json', d.current);  // update snapshot\nreturn [{ json: { status: 'DIFF', previous: d.previous, current: d.current } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        336
+      ],
+      "id": "a0934f46-1d68-45d5-89a0-40cf00735f6e",
+      "name": "3RD CODE NODE1"
+    }
+  ],
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "1ST CODE NODE1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "2ND CODE NODE1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "3RD CODE NODE1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1ST CODE NODE1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "88c57174-5f37-4120-846a-76ee0bead76e",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-06-12T11:58:10.704Z",
+      "createdAt": "2026-06-12T11:58:10.704Z",
+      "role": "workflow:owner",
+      "workflowId": "0KKkKlZ2akiGtEzF",
+      "projectId": "pDgRVPnkxGjfg5Bm"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
